@@ -1,6 +1,7 @@
 // Copyright (C) Alin Ichim 2023
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <sys/socket.h>
 #include <poll.h>
@@ -15,8 +16,10 @@ int main(void) {
 
   std::string command;
   std::string jwt_token = "";
+  std::vector<std::string> cookies;
   while (true) {
     // Receive command from STDIN.
+    std::cout << "> ";
     std::cin >> command;
     LOG_INFO("Received command: " + command);
 
@@ -24,13 +27,12 @@ int main(void) {
     process_code code = process_get_code(command);
     switch(code) {
       case REGISTER: {
-        // TODO
         process_register();
         break;
       }
       case LOGIN: {
         // TODO
-        // * process_login()
+        process_login(cookies);
         break;
       }
       case LOGOUT: {

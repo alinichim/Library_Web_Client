@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <sstream>
 #include <cstdlib>
 
@@ -68,7 +69,7 @@ void process_register() {
 
   // Process server response.
   LOG_INFO("Server response:\n" + (std::string)response);
-  if ((std::string)response == "") {
+  if (response[strlen("HTTP/1.1 ")] == '2') {
     std::cout << " -- New user registered!" << std::endl;
   } else {
     std::string json_str = basic_extract_json_response(response);
@@ -81,7 +82,69 @@ void process_register() {
     json response_data = json::parse(json_str);
     std::cout << response_data["error"] << std::endl;
   }
-
   free(response);
+
+  // Close connection.
+  close_connection(sockfd);
+}
+
+void process_login(std::vector<std::string> &cookies) {
+  // Get username and password.
+  std::string username, password;
+  std::cout << "username=";
+  std::cin >> username;
+  std::cout << "password=";
+  std::cin >> password;
+
+  // Compute JSON data.
+  json data;
+  data["username"] = username;
+  data["password"] = password;
+  LOG_INFO("Computed data to send to server:\n" + data.dump());
+
+  // Compute POST message.
+  char *message = compute_post_request(HOST, LOGIN_URL, CONTENT_TYPE, data.dump().data(), NULL, 0);
+
+  // Open connection to server.
+  int sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+  // Send message.
+  send_to_server(sockfd, message);
+  LOG_INFO("Message sent:\n" + (std::string)message);
+  free(message);
+
+  // Await server response.
+  char *response = receive_from_server(sockfd);
+
+  // Process server response.
+  LOG_INFO("Server response:\n" + (std::string)response);
+  if (response[strlen("HTTP/1.1 ")] == '2') {
+    std::cout << " -- User authenticated!" << std::endl;
+
+    // Extract cookies.
+    std::stringstream ss;
+    char *c_start = strstr(response, "Set-Cookie:");
+    ss << c_start;
+    std::string line;
+    getline(ss, line);
+    line = line.substr(strlen("Set-Cookie: "), std::string::npos);  // Remove header name.
+    line = line.substr(0, line.size() - 1);  // Remove carriage return.
+
+    // Store cookies.
+    cookies.push_back(line);
+  } else {
+    std::string json_str = basic_extract_json_response(response);
+
+    // Extract response code.
+    std::string code = strtok(response, "\n");
+    code.erase(code.end() - 1);  // Carriage return.
+    std::cout << code << " -- ";
+
+    json response_data = json::parse(json_str);
+    std::cout << response_data["error"] << std::endl;
+  }
+  free(response);
+
+  // Close connection.
   close_connection(sockfd);
 }
