@@ -3,6 +3,7 @@
 #define CLIENT_FUNCS_H_
 
 #include <string>
+#include <vector>
 
 enum process_code {
   REGISTER,
@@ -35,26 +36,30 @@ void process_register();
 /**
  * @brief Processes user authentication.
  * 
+ * @param cookies Stored cookies.
  */
-void process_login();
+void process_login(std::vector<std::string> &cookies);
 
 /**
  * @brief Processes user deauthentication.
  * 
+ * @param cookies Stored cookies.
  */
-void process_logout();
+void process_logout(std::vector<std::string> &cookies);
 
 /**
  * @brief Processes user library access.
  * 
+ * @param cookies Stored cookies.
  */
-void process_enter_library();
+void process_enter_library(std::vector<std::string> &cookies);
 
 /**
  * @brief Processes library query.
  * 
+ * @param cookies Stored cookies.
  */
-void process_get_books_list();
+void process_get_books_list(std::vector<std::string> &cookies);
 
 /**
  * @brief Processes library query on a single book.
