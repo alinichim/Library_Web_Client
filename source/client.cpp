@@ -40,8 +40,7 @@ int main(void) {
         break;
       }
       case ENTER_LIBRARY: {
-        // TODO
-        // * process_enter_library()
+        process_enter_library(cookies, authenticated, jwt_token);
         break;
       }
       case GET_BOOKS_LIST: {

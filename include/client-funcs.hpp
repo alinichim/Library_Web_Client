@@ -54,6 +54,7 @@ void process_logout(std::vector<std::string> &cookies, bool &authenticated);
  * 
  * @param cookies Stored cookies.
  * @param authenticated Tells if the user is already authenticated.
+ * @param jwt_token Reference to where to store the JWT token.
  */
 void process_enter_library(std::vector<std::string> &cookies, bool &authenticated, std::string &jwt_token);
 
@@ -62,28 +63,33 @@ void process_enter_library(std::vector<std::string> &cookies, bool &authenticate
  * 
  * @param cookies Stored cookies.
  * @param authenticated Tells if the user is already authenticated.
+ * @param jwt_token JWT token.
  */
-void process_get_books_list(std::vector<std::string> &cookies, bool &authenticated);
+void process_get_books_list(std::vector<std::string> &cookies, bool &authenticated, std::string jwt_token);
 
 /**
  * @brief Processes library query on a single book.
  * 
+ * @param cookies Stored cookies.
  * @param authenticated Tells if the user is already authenticated.
+ * @param jwt_token JWT token.
  */
-void process_get_book(bool &authenticated);
+void process_get_book(std::vector<std::string> &cookies, bool &authenticated, std::string jwt_token);
 
 /**
  * @brief Processes library book insertion.
  * 
+ * @param cookies Stored cookies.
  * @param authenticated Tells if the user is already authenticated.
+ * @param jwt_token JWT token.
  */
-void process_add_book(bool &authenticated);
+void process_add_book(std::vector<std::string> &cookies, bool &authenticated, std::string jwt_token);
 
 /**
  * @brief Processes library book deletion.
  * 
  * @param authenticated Tells if the user is already authenticated.
  */
-void process_delete_book(bool &authenticated);
+void process_delete_book(std::vector<std::string> &cookies, bool &authenticated, std::string jwt_token);
 
 #endif  // CLIENT_FUNCS_H_
