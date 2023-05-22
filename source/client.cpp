@@ -44,8 +44,7 @@ int main(void) {
         break;
       }
       case GET_BOOKS_LIST: {
-        // TODO
-        // * process_get_books_list()
+        process_get_books_list(cookies, authenticated, jwt_token);
         break;
       }
       case GET_BOOK: {

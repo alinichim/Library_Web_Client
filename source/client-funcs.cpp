@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <cstdlib>
+#include <cstring>
 
 #include <sys/socket.h>
 #include <poll.h>
@@ -231,6 +232,47 @@ void process_enter_library(std::vector<std::string> &cookies, bool &authenticate
     jwt_token = "Bearer " + (std::string)response_data["token"];
     std::cout << "[+] User access granted!" << std::endl;
   } else {
+    std::cout << "[-] " << response_data["error"] << std::endl;
+  }
+  free(response);
+
+  // Close connection.
+  close_connection(sockfd);
+}
+
+void process_get_books_list(std::vector<std::string> &cookies, bool &authenticated, std::string jwt_token) {
+  // Check if the user is already authenticated.
+  if (!authenticated) {
+    std::cout << "[-] User is not authenticated!" << std::endl;
+
+    return;
+  }
+
+  // Build message.
+  const char *authorization = cookies[0].data();
+  std::string jwt_header = "Authorization: " + jwt_token;
+  const char *jwt = jwt_header.data();
+  char *message = compute_get_request(HOST, BOOKS_URL, NULL, (char **)&authorization, 1, (char **)&jwt, 1);
+
+  // Open connection to server.
+  int sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+  // Send message to server.
+  send_to_server(sockfd, message);
+  LOG_INFO("Message sent");
+  free(message);
+
+  // Await server response.
+  char *response = receive_from_server(sockfd);
+
+  // Process server response.
+  if (response[strlen("HTTP/1.1 ")] == '2') {
+    char *payload = strstr(response, "\r\n[") + 2;
+    std::cout << "[+] Books accessed!" << std::endl << payload << std::endl;
+  } else {
+    char *payload = basic_extract_json_response(response);
+    std::string json_str = payload;
+    json response_data = json::parse(json_str);
     std::cout << "[-] " << response_data["error"] << std::endl;
   }
   free(response);
