@@ -53,8 +53,7 @@ int main(void) {
         break;
       }
       case ADD_BOOK: {
-        // TODO
-        // * process_add_book()
+        process_add_book(cookies, authenticated, jwt_token);
         break;
       }
       case DELETE_BOOK: {
