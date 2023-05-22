@@ -17,6 +17,7 @@ int main(void) {
   std::string command;
   std::string jwt_token = "";
   std::vector<std::string> cookies;
+  bool authenticated = false;
   while (true) {
     // Receive command from STDIN.
     std::cout << "> ";
@@ -27,12 +28,11 @@ int main(void) {
     process_code code = process_get_code(command);
     switch(code) {
       case REGISTER: {
-        process_register();
+        process_register(authenticated);
         break;
       }
       case LOGIN: {
-        // TODO
-        process_login(cookies);
+        process_login(cookies, authenticated);
         break;
       }
       case LOGOUT: {

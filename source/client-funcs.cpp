@@ -39,7 +39,15 @@ process_code process_get_code(std::string command) {
   return INVALID;
 }
 
-void process_register() {
+void process_register(bool &authenticated) {
+
+  // Check if the user is already authenticated.
+  if (authenticated) {
+    std::cout << "[-] User already authenticated! Logout before trying to authenticate again" << std::endl;
+
+    return;
+  }
+
   // Get username and password.
   std::string username, password;
   std::cout << "username=";
@@ -61,24 +69,18 @@ void process_register() {
 
   // Send message.
   send_to_server(sockfd, message);
-  LOG_INFO("Message sent:\n" + (std::string)message);
+  LOG_INFO("Message sent");
   free(message);
 
   // Await server response.
   char *response = receive_from_server(sockfd);
 
   // Process server response.
-  LOG_INFO("Server response:\n" + (std::string)response);
   if (response[strlen("HTTP/1.1 ")] == '2') {
-    std::cout << " -- New user registered!" << std::endl;
+    std::cout << "[+] New user registered!" << std::endl;
   } else {
     std::string json_str = basic_extract_json_response(response);
-
-    // Extract response code.
-    std::string code = strtok(response, "\n");
-    code.erase(code.end() - 1);  // Carriage return.
-    std::cout << code << " -- ";
-
+    std::cout << "[-] ";
     json response_data = json::parse(json_str);
     std::cout << response_data["error"] << std::endl;
   }
@@ -88,7 +90,15 @@ void process_register() {
   close_connection(sockfd);
 }
 
-void process_login(std::vector<std::string> &cookies) {
+void process_login(std::vector<std::string> &cookies, bool &authenticated) {
+
+  // Check if the user is already authenticated.
+  if (authenticated) {
+    std::cout << "[-] User already authenticated! Logout before trying to authenticate again" << std::endl;
+
+    return;
+  }
+
   // Get username and password.
   std::string username, password;
   std::cout << "username=";
@@ -110,16 +120,15 @@ void process_login(std::vector<std::string> &cookies) {
 
   // Send message.
   send_to_server(sockfd, message);
-  LOG_INFO("Message sent:\n" + (std::string)message);
+  LOG_INFO("Message sent");
   free(message);
 
   // Await server response.
   char *response = receive_from_server(sockfd);
 
   // Process server response.
-  LOG_INFO("Server response:\n" + (std::string)response);
   if (response[strlen("HTTP/1.1 ")] == '2') {
-    std::cout << " -- User authenticated!" << std::endl;
+    std::cout << "[+] User authenticated!" << std::endl;
 
     // Extract cookies.
     std::stringstream ss;
@@ -132,14 +141,12 @@ void process_login(std::vector<std::string> &cookies) {
 
     // Store cookies.
     cookies.push_back(line);
+
+    // Update `authenticated` state.
+    authenticated = true;
   } else {
     std::string json_str = basic_extract_json_response(response);
-
-    // Extract response code.
-    std::string code = strtok(response, "\n");
-    code.erase(code.end() - 1);  // Carriage return.
-    std::cout << code << " -- ";
-
+    std::cout << "[-] ";
     json response_data = json::parse(json_str);
     std::cout << response_data["error"] << std::endl;
   }
@@ -148,3 +155,4 @@ void process_login(std::vector<std::string> &cookies) {
   // Close connection.
   close_connection(sockfd);
 }
+
