@@ -62,7 +62,7 @@ void process_register(bool &authenticated) {
   LOG_INFO("Computed data to send to server:\n" + data.dump());
 
   // Compute POST message.
-  char *message = compute_post_request(HOST, REGISTER_URL, CONTENT_TYPE, data.dump().data(), NULL, 0);
+  char *message = compute_post_request(HOST, REGISTER_URL, CONTENT_TYPE, data.dump().data(), NULL, 0, NULL, 0);
 
   // Open connection to server.
   int sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
@@ -113,7 +113,7 @@ void process_login(std::vector<std::string> &cookies, bool &authenticated) {
   LOG_INFO("Computed data to send to server:\n" + data.dump());
 
   // Compute POST message.
-  char *message = compute_post_request(HOST, LOGIN_URL, CONTENT_TYPE, data.dump().data(), NULL, 0);
+  char *message = compute_post_request(HOST, LOGIN_URL, CONTENT_TYPE, data.dump().data(), NULL, 0, NULL, 0);
 
   // Open connection to server.
   int sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
@@ -156,3 +156,54 @@ void process_login(std::vector<std::string> &cookies, bool &authenticated) {
   close_connection(sockfd);
 }
 
+void process_logout(std::vector<std::string> &cookies, bool &authenticated) {
+
+  // Check if the user is already authenticated.
+  if (!authenticated) {
+    std::cout << "[-] User is not authenticated!" << std::endl;
+
+    return;
+  }
+
+  // Build `logout` message.
+  const char *authorization = cookies[0].data();
+  char *message = compute_get_request(HOST, LOGOUT_URL, NULL, (char **)&authorization, 1, NULL, 0);
+
+  // Open connection to server.
+  int sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+  // Send message to server.
+  send_to_server(sockfd, message);
+  LOG_INFO("Message sent");
+  free(message);
+
+  // Await server response.
+  char *response = receive_from_server(sockfd);
+
+  // Process server response.
+  if (response[strlen("HTTP/1.1 ")] == '2') {
+    std::cout << "[+] User deauthenticated!" << std::endl;
+    cookies.clear();
+  } else {
+    std::string json_str = basic_extract_json_response(response);
+    std::cout << "[-] ";
+    json response_data = json::parse(json_str);
+    std::cout << response_data["error"] << std::endl;
+  }
+  free(response);
+
+  // Close connection.
+  close_connection(sockfd);
+}
+
+void process_enter_library(std::vector<std::string> &cookies, bool &authenticated, std::string &jwt_token) {
+
+  // Check if the user is already authenticated.
+  if (authenticated) {
+    std::cout << "[-] User already authenticated! Logout before trying to authenticate again" << std::endl;
+
+    return;
+  }
+
+
+}

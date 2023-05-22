@@ -9,8 +9,8 @@
 #include "helpers.h"
 #include "requests.h"
 
-char *compute_get_request(char *host, char *url, char *query_params,
-                            char **cookies, int cookies_count)
+char *compute_get_request(const char *host, const char *url, char *query_params,
+                            char **cookies, int cookies_count, char **headers, int headers_count)
 {
     char *message = (char *)calloc(BUFLEN, sizeof(char));
     char *line = (char *)calloc(LINELEN, sizeof(char));
@@ -40,6 +40,13 @@ char *compute_get_request(char *host, char *url, char *query_params,
       compute_message(message, line);
       memset(line, 0, LINELEN);
     }
+    if (headers != NULL) {
+      for (int i = 0; i < headers_count; ++i) {
+        strcpy(line, headers[i]);
+        compute_message(message, line);
+        memset(line, 0, LINELEN);
+      }
+    }
 
     // Step 4: add final new line
     compute_message(message, "");
@@ -49,7 +56,7 @@ char *compute_get_request(char *host, char *url, char *query_params,
 }
 
 char *compute_post_request(const char *host, const char *url, const char* content_type, const char *body_data,
-                            const char **cookies, int cookies_count)
+                            const char **cookies, int cookies_count, char **headers, int headers_count)
 {
     char *message = (char *)calloc(BUFLEN, sizeof(char));
     char *line = (char *)calloc(LINELEN, sizeof(char));
@@ -83,6 +90,13 @@ char *compute_post_request(const char *host, const char *url, const char* conten
       }
       compute_message(message, line);
       memset(line, 0, LINELEN);
+    }
+    if (headers != NULL) {
+      for (int i = 0; i < headers_count; ++i) {
+        strcpy(line, headers[i]);
+        compute_message(message, line);
+        memset(line, 0, LINELEN);
+      }
     }
 
     // Step 5: add new line at end of header

@@ -36,8 +36,7 @@ int main(void) {
         break;
       }
       case LOGOUT: {
-        // TODO
-        // * process_logout()
+        process_logout(cookies, authenticated);
         break;
       }
       case ENTER_LIBRARY: {
@@ -72,6 +71,7 @@ int main(void) {
       default: {
         // ! Invalid command
         LOG_ERROR("Invalid command!");
+        std::cout << "[-] Invalid command!" << std::endl;
         break;
       }
     }
