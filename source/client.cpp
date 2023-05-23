@@ -21,7 +21,7 @@ int main(void) {
   while (true) {
     // Receive command from STDIN.
     std::cout << "> ";
-    std::cin >> command;
+    std::getline(std::cin, command);
     LOG_INFO("Received command: " + command);
 
     // Process command.

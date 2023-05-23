@@ -15,6 +15,7 @@
 #include "logger.h"
 #include "requests.h"
 #include "helpers.h"
+#include "client-check.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -28,6 +29,7 @@ using json = nlohmann::json;
 #define CONTENT_TYPE "application/json"
 
 process_code process_get_code(std::string command) {
+  if (!client_check_command(command)) return INVALID;
   if (command == "register") return REGISTER;
   if (command == "login") return LOGIN;
   if (command == "logout") return LOGOUT;
@@ -50,16 +52,25 @@ void process_register(bool &authenticated) {
   }
 
   // Get username and password.
-  std::string username, password;
-  std::cout << "username=";
-  std::cin >> username;
-  std::cout << "password=";
-  std::cin >> password;
-
-  // Compute JSON data.
   json data;
-  data["username"] = username;
-  data["password"] = password;
+  std::string input;
+  // Get username.
+  do {
+    std::cout << "username="; std::getline(std::cin, input);
+    if (client_check_credential(input))
+      break;
+    std::cout << "[-] Invalid username!" << std::endl;
+  } while (true);
+  data["username"] = input;
+  // Get password.
+  do {
+    std::cout << "password="; std::getline(std::cin, input);
+    if (client_check_credential(input))
+      break;
+    std::cout << "[-] Invalid password!" << std::endl;
+  } while (true);
+  data["password"] = input;
+
   LOG_INFO("Computed data to send to server:\n" + data.dump());
 
   // Compute POST message.
@@ -101,16 +112,25 @@ void process_login(std::vector<std::string> &cookies, bool &authenticated) {
   }
 
   // Get username and password.
-  std::string username, password;
-  std::cout << "username=";
-  std::cin >> username;
-  std::cout << "password=";
-  std::cin >> password;
-
-  // Compute JSON data.
   json data;
-  data["username"] = username;
-  data["password"] = password;
+  std::string input;
+  // Get username.
+  do {
+    std::cout << "username="; std::getline(std::cin, input);
+    if (client_check_credential(input))
+      break;
+    std::cout << "[-] Invalid username!" << std::endl;
+  } while (true);
+  data["username"] = input;
+  // Get password.
+  do {
+    std::cout << "password="; std::getline(std::cin, input);
+    if (client_check_credential(input))
+      break;
+    std::cout << "[-] Invalid password!" << std::endl;
+  } while (true);
+  data["password"] = input;
+
   LOG_INFO("Computed data to send to server:\n" + data.dump());
 
   // Compute POST message.
@@ -296,26 +316,45 @@ void process_add_book(std::vector<std::string> &cookies, bool &authenticated, st
   // Get book data.
   json book_data;
   std::string book_attr;
-  std::cout << "tile="; std::getline(std::cin, book_attr);
-  if (book_attr == "") std::getline(std::cin, book_attr);  // Checks if the input was a trailing '\n'.
+  // Get book title.
+  do {
+    std::cout << "tile="; std::getline(std::cin, book_attr);
+    if (client_check_book_attr(book_attr))
+      break;
+    std::cout << "[-] Invalid book title!" << std::endl;
+  } while (true);
   book_data["title"] = book_attr;
-  std::cout << "author="; std::getline(std::cin, book_attr);
+  // Get book author.
+  do {
+    std::cout << "author="; std::getline(std::cin, book_attr);
+    if (client_check_book_attr(book_attr))
+      break;
+    std::cout << "[-] Invalid book author!" << std::endl;
+  } while (true);
   book_data["author"] = book_attr;
-  std::cout << "genre="; std::getline(std::cin, book_attr);
+  // Get book genre.
+  do {
+    std::cout << "genre="; std::getline(std::cin, book_attr);
+    if (client_check_book_attr(book_attr))
+      break;
+    std::cout << "[-] Invalid book genre!" << std::endl;
+  } while (true);
   book_data["genre"] = book_attr;
-  std::cout << "publisher="; std::getline(std::cin, book_attr);
+  // Get book publisher.
+  do {
+    std::cout << "publisher="; std::getline(std::cin, book_attr);
+    if (client_check_book_attr(book_attr))
+      break;
+    std::cout << "[-] Invalid book publisher!" << std::endl;
+  } while (true);
   book_data["publisher"] = book_attr;
-  while (true) {
-
+  // Get book page_count.
+  do {
     std::cout << "page_count="; std::getline(std::cin, book_attr);
-    try {
-      if (std::stoi(book_attr, nullptr, 10) > 0)
-        break;
-    } catch (std::invalid_argument &e) {
-    }
-    
-    std::cout << "[-] Invalid page count!" << std::endl;
-  }
+    if (client_check_book_page_count(book_attr))
+      break;
+    std::cout << "[-] Invalid book page_count!" << std::endl;
+  } while (true);
   book_data["page_count"] = std::stoi(book_attr, nullptr, 10);
 
   // Build message.
@@ -361,18 +400,12 @@ void process_get_book(std::vector<std::string> &cookies, bool &authenticated, st
 
   // Get book data.
   std::string book_id_str;
-  while (true) {
+  do {
     std::cout << "id="; std::getline(std::cin, book_id_str);
-    if (book_id_str == "") std::getline(std::cin, book_id_str);  // Checks if the input was a trailing '\n'.
-    try {
-      if (std::stoi(book_id_str, nullptr, 10) > 0)
-        break;
-    } catch (std::invalid_argument &e) {
-    }
-    
-    std::cout << "[-] Invalid id!" << std::endl;
-  }
-  int book_id = std::stoi(book_id_str, nullptr, 10);
+    if (client_check_book_id(book_id_str))
+      break;
+    std::cout << "[-] Invalid book id!" << std::endl;
+  } while (true);
 
   // Build message.
   const char *authorization = cookies[0].data();
@@ -380,7 +413,7 @@ void process_get_book(std::vector<std::string> &cookies, bool &authenticated, st
   const char *jwt = jwt_header.data();
   std::string url = BOOKS_URL;
   url += "/";
-  url += std::to_string(book_id);
+  url += std::to_string(std::stoi(book_id_str));
   char *message = compute_get_request(HOST, url.data(), NULL, (char **)&authorization, 1, (char **)&jwt, 1);
 
   // Open connection to server.
@@ -421,18 +454,12 @@ void process_delete_book(std::vector<std::string> &cookies, bool &authenticated,
 
   // Get book data.
   std::string book_id_str;
-  while (true) {
+  do {
     std::cout << "id="; std::getline(std::cin, book_id_str);
-    if (book_id_str == "") std::getline(std::cin, book_id_str);  // Checks if the input was a trailing '\n'.
-    try {
-      if (std::stoi(book_id_str, nullptr, 10) > 0)
-        break;
-    } catch (std::invalid_argument &e) {
-    }
-    
-    std::cout << "[-] Invalid id!" << std::endl;
-  }
-  int book_id = std::stoi(book_id_str, nullptr, 10);
+    if (client_check_book_id(book_id_str))
+      break;
+    std::cout << "[-] Invalid book id!" << std::endl;
+  } while (true);
 
   // Build message.
   const char *authorization = cookies[0].data();
@@ -440,7 +467,7 @@ void process_delete_book(std::vector<std::string> &cookies, bool &authenticated,
   const char *jwt = jwt_header.data();
   std::string url = BOOKS_URL;
   url += "/";
-  url += std::to_string(book_id);
+  url += std::to_string(std::stoi(book_id_str));
   char *message = compute_get_request(HOST, url.data(), NULL, (char **)&authorization, 1, (char **)&jwt, 1);
   // Transform GET in DELETE.
   std::string delete_message = "DELETE" + (std::string)(message + strlen("GET"));
