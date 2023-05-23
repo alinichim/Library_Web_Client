@@ -36,7 +36,7 @@ int main(void) {
         break;
       }
       case LOGOUT: {
-        process_logout(cookies, authenticated);
+        process_logout(cookies, authenticated, jwt_token);
         break;
       }
       case ENTER_LIBRARY: {
@@ -56,8 +56,7 @@ int main(void) {
         break;
       }
       case DELETE_BOOK: {
-        // TODO
-        // * process_delete_book()
+        process_delete_book(cookies, authenticated, jwt_token);
         break;
       }
       case EXIT: {

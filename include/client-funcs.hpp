@@ -46,8 +46,9 @@ void process_login(std::vector<std::string> &cookies, bool &authenticated);
  * 
  * @param cookies Stored cookies.
  * @param authenticated Tells if the user is already authenticated.
+ * @param jwt_token Reference to where to store the JWT token.
  */
-void process_logout(std::vector<std::string> &cookies, bool &authenticated);
+void process_logout(std::vector<std::string> &cookies, bool &authenticated, std::string &jwt_token);
 
 /**
  * @brief Processes user library access.

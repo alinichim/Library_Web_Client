@@ -157,7 +157,7 @@ void process_login(std::vector<std::string> &cookies, bool &authenticated) {
   close_connection(sockfd);
 }
 
-void process_logout(std::vector<std::string> &cookies, bool &authenticated) {
+void process_logout(std::vector<std::string> &cookies, bool &authenticated, std::string &jwt_token) {
 
   // Check if the user is already authenticated.
   if (!authenticated) {
@@ -184,6 +184,8 @@ void process_logout(std::vector<std::string> &cookies, bool &authenticated) {
   // Process server response.
   if (response[strlen("HTTP/1.1 ")] == '2') {
     std::cout << "[+] User deauthenticated!" << std::endl;
+    authenticated = false;
+    jwt_token = "";
     cookies.clear();
   } else {
     std::string json_str = basic_extract_json_response(response);
@@ -304,7 +306,7 @@ void process_add_book(std::vector<std::string> &cookies, bool &authenticated, st
   std::cout << "publisher="; std::getline(std::cin, book_attr);
   book_data["publisher"] = book_attr;
   while (true) {
-    
+
     std::cout << "page_count="; std::getline(std::cin, book_attr);
     try {
       if (std::stoi(book_attr, nullptr, 10) > 0)
@@ -396,6 +398,67 @@ void process_get_book(std::vector<std::string> &cookies, bool &authenticated, st
   if (response[strlen("HTTP/1.1 ")] == '2') {
     std::cout << "[+] Book retrieved!" << std::endl;
     std::cout << basic_extract_json_response(response) << std::endl;
+  } else {
+    char *payload = basic_extract_json_response(response);
+    std::string json_str = payload;
+    json response_data = json::parse(json_str);
+    std::cout << "[-] " << response_data["error"] << std::endl;
+  }
+  free(response);
+
+  // Close connection.
+  close_connection(sockfd);
+}
+
+void process_delete_book(std::vector<std::string> &cookies, bool &authenticated, std::string jwt_token) {
+
+  // Check if the user is already authenticated.
+  if (!authenticated) {
+    std::cout << "[-] User is not authenticated!" << std::endl;
+
+    return;
+  }
+
+  // Get book data.
+  std::string book_id_str;
+  while (true) {
+    std::cout << "id="; std::getline(std::cin, book_id_str);
+    if (book_id_str == "") std::getline(std::cin, book_id_str);  // Checks if the input was a trailing '\n'.
+    try {
+      if (std::stoi(book_id_str, nullptr, 10) > 0)
+        break;
+    } catch (std::invalid_argument &e) {
+    }
+    
+    std::cout << "[-] Invalid id!" << std::endl;
+  }
+  int book_id = std::stoi(book_id_str, nullptr, 10);
+
+  // Build message.
+  const char *authorization = cookies[0].data();
+  std::string jwt_header = "Authorization: " + jwt_token;
+  const char *jwt = jwt_header.data();
+  std::string url = BOOKS_URL;
+  url += "/";
+  url += std::to_string(book_id);
+  char *message = compute_get_request(HOST, url.data(), NULL, (char **)&authorization, 1, (char **)&jwt, 1);
+  // Transform GET in DELETE.
+  std::string delete_message = "DELETE" + (std::string)(message + strlen("GET"));
+
+  // Open connection to server.
+  int sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+  // Send message to server.
+  send_to_server(sockfd, (char *)delete_message.data());
+  LOG_INFO("Message sent");
+  free(message);
+
+  // Await server response.
+  char *response = receive_from_server(sockfd);
+
+  // Process server response.
+  if (response[strlen("HTTP/1.1 ")] == '2') {
+    std::cout << "[+] Book deleted!" << std::endl;
   } else {
     char *payload = basic_extract_json_response(response);
     std::string json_str = payload;
